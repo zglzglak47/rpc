@@ -24,7 +24,7 @@ type clientRequest struct {
 	Method string `json:"method"`
 
 	// Object to pass as request parameter to the method.
-	Params interface{} `json:"params"`
+	Params []interface{} `json:"params"`
 
 	// The request id. This can be of any type. It is used to match the
 	// response with the request that it is replying to.
@@ -39,12 +39,15 @@ type clientResponse struct {
 }
 
 // EncodeClientRequest encodes parameters for a JSON-RPC client request.
-func EncodeClientRequest(method string, args interface{}) ([]byte, error) {
+func EncodeClientRequest(method string, args []interface{}) ([]byte, error) {
 	c := &clientRequest{
 		Version: "2.0",
 		Method:  method,
-		Params:  args,
 		Id:      uint64(rand.Int63()),
+	}
+
+	if nil != args {
+		c.Params = args
 	}
 	return json.Marshal(c)
 }

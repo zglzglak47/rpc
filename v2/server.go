@@ -56,11 +56,12 @@ type RequestInfo struct {
 
 // Server serves registered RPC services using registered codecs.
 type Server struct {
-	codecs        map[string]Codec
-	services      *serviceMap
-	interceptFunc func(i *RequestInfo) *http.Request
-	beforeFunc    func(i *RequestInfo)
-	afterFunc     func(i *RequestInfo)
+	codecs              map[string]Codec
+	services            *serviceMap
+	interceptFunc       func(i *RequestInfo) *http.Request
+	beforeFunc          func(i *RequestInfo)
+	beforeWithErrorFunc func(i *RequestInfo) error
+	afterFunc           func(i *RequestInfo)
 }
 
 // RegisterCodec adds a new codec to the server.
@@ -89,6 +90,11 @@ func (s *Server) RegisterInterceptFunc(f func(i *RequestInfo) *http.Request) {
 // method will overwrite all the previous functions.
 func (s *Server) RegisterBeforeFunc(f func(i *RequestInfo)) {
 	s.beforeFunc = f
+}
+
+//RegisterBeforeWithErrorFunc run before "RegisterBeforeFunc" and will check the error and return
+func (s *Server) RegisterBeforeWithErrorFunc(f func(i *RequestInfo)) error {
+	s.beforeWithErrorFunc = f
 }
 
 // RegisterAfterFunc registers the specified function as the function
@@ -182,6 +188,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			r = req
 		}
 	}
+
+	// Call the registered BeforeWithError Function
+	if s.beforeWithErrorFunc != nil {
+		s.beforeWithErrorFunc(&RequestInfo{
+			Request: r,
+			Method:  method,
+		})
+	}
+
 	// Call the registered Before Function
 	if s.beforeFunc != nil {
 		s.beforeFunc(&RequestInfo{

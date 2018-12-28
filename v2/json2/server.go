@@ -94,14 +94,25 @@ func newCodecRequest(r *http.Request, encoder rpc.Encoder) rpc.CodecRequest {
 			Message: err.Error(),
 			Data:    req,
 		}
-	}
-	if req.Version != Version {
-		err = &Error{
-			Code:    E_INVALID_REQ,
-			Message: "jsonrpc must be " + Version,
-			Data:    req,
+	} else {
+		if req.Id == nil {
+			err = &Error{
+				Code:    E_INVALID_REQ,
+				Message: "jsonrpc have id ",
+				Data:    req,
+			}
 		}
+
+		if req.Version != Version {
+			err = &Error{
+				Code:    E_INVALID_REQ,
+				Message: "jsonrpc must be " + Version,
+				Data:    req,
+			}
+		}
+
 	}
+
 	r.Body.Close()
 	return &CodecRequest{request: req, err: err, encoder: encoder}
 }
@@ -186,7 +197,8 @@ func (c *CodecRequest) WriteError(w http.ResponseWriter, status int, err error) 
 
 func (c *CodecRequest) writeServerResponse(w http.ResponseWriter, res *serverResponse) {
 	// Id is null for notifications and they don't have a response.
-	if c.request.Id != nil {
+	// but if already have an Error, the Error should be write
+	if c.request.Id != nil || res.Error != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		encoder := json.NewEncoder(c.encoder.Encode(w))
 		err := encoder.Encode(res)
