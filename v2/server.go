@@ -93,7 +93,7 @@ func (s *Server) RegisterBeforeFunc(f func(i *RequestInfo)) {
 }
 
 //RegisterBeforeWithErrorFunc run before "RegisterBeforeFunc" and will check the error and return
-func (s *Server) RegisterBeforeWithErrorFunc(f func(i *RequestInfo)) error {
+func (s *Server) RegisterBeforeWithErrorFunc(f func(i *RequestInfo) error) {
 	s.beforeWithErrorFunc = f
 }
 
